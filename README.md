@@ -116,3 +116,11 @@ env CUDA_VISIBLE_DEVICES=0 fairseq-train data/kftt-data-1.0/data/spm.bin \
         --maximize-best-checkpoint-metric \
         --tensorboard-logdir runs
 ```
+
+```
+# 学習したモデルによる翻訳（前処理済みのテストセットに対して）
+env CUDA_VISIBLE_DEVICES=0 fairseq-generate data/kftt-data-1.0/data/spm.bin \
+        --path data/kftt-data-1.0/model/checkpoint_last.pt \
+        --batch-size 128 \
+        --beam 5
+```
