@@ -18,7 +18,9 @@ source .venv/bin/activate
 とりあえず動かすだけならPyPI標準のfairseqをpipで入れる（最新版ではない）
 ```
 # pipでfairseqをインストール
-pip3 install fairseq
+git clone https://github.com/pytorch/fairseq
+cd fairseq 
+pip install --editable ./
 ```
 
 ```
