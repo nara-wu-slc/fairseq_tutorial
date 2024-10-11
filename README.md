@@ -13,6 +13,9 @@ python3 -m venv .venv
 
 # 仮想環境を有効化
 source .venv/bin/activate
+
+# Pytorchをインストール
+pip3 install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
 ```
 
 とりあえず動かすだけならPyPI標準のfairseqをpipで入れる（最新版ではない）
