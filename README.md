@@ -40,7 +40,7 @@ mkdir -p data spm
 
 # curlでKFTTをダウンロードして展開（そんなに大きくないので圧縮ファイルを手元に残さない方向で）
 # data/kftt-data-1.0 にデータが格納される
-curl http://www.phontron.com/kftt/download/kftt-data-1.0.tar.gz | tar zxf -C data
+curl http://www.phontron.com/kftt/download/kftt-data-1.0.tar.gz | tar zxf - -C data
 ```
 
 ```
