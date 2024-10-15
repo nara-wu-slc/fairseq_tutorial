@@ -71,7 +71,7 @@ for data in ['kyoto-train', 'kyoto-dev', 'kyoto-test']:
             for line in rf:
                 _ = wf.write(' '.join(sp.encode(line.rstrip("\r"), out_type=str))+"\n")
 
-exit
+exit()
 ```
 
 ```
@@ -123,8 +123,35 @@ env CUDA_VISIBLE_DEVICES=0 fairseq-train data/kftt-data-1.0/data/spm.bin \
 
 ```
 # 学習したモデルによる翻訳（前処理済みのテストセットに対して）
+mkdir -p result
 env CUDA_VISIBLE_DEVICES=0 fairseq-generate data/kftt-data-1.0/data/spm.bin \
         --path data/kftt-data-1.0/model/checkpoint_last.pt \
         --batch-size 128 \
-        --beam 5
+        --beam 5 \
+| tee result/kyoto-test.en.log
+```
+
+```
+# fairseq-generateのログから翻訳結果の行 (Hで始まる）を取り出し、番号順にsortし、翻訳結果のテキストのみを取り出す
+grep ^H result/kyoto-test.en.log | sed -e 's,^H-,,' | sort -k 1n | cut -f 3 > result/kyoto-test.en.spm
+
+# 学習したsentencepieceのモデルでサブワード化されたテキストを脱トークン化
+python3
+
+# Pythonのプロンプト内で以下を実行
+import sentencepiece as spm
+sp = spm.SentencePieceProcessor(model_file='spm/spm.model')
+with open('result/kyoto-test.en.spm', 'rt') as rf, open('result/kyoto-test.en', 'wt') as wf:
+    for line in rf:
+        _ = wf.write(sp.decode(line.rstrip("\r").split(" ")))
+
+exit()
+```
+
+```
+# 機械翻訳評価のためのツールを入れる
+pip install sacrebleu\[ja\]
+
+# sacrebleuを使ってBLEUを評価
+sacrebleu data/kftt-data-1.0/data/orig/kyoto-test.en -i result/kyoto-test.en
 ```
