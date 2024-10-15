@@ -24,6 +24,7 @@ pip3 install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
 git clone https://github.com/pytorch/fairseq
 cd fairseq 
 pip install --editable ./
+cd ..
 ```
 
 ```
