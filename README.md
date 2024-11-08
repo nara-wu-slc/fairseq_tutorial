@@ -1,68 +1,89 @@
 # Lab4SLC fairseq チュートリアル
 
+作業ディレクトリに移動 (/path/to/dir は好きなところで良い、相対パスでもOK)
 ```
-# 作業ディレクトリに移動 (/path/to/dir は好きなところで良い、相対パスでもOK)
 cd /path/to/dir
+```
 
-# 本チュートリアル用のディレクトリを作成して移動
+本チュートリアル用のディレクトリを作成して移動
+```
 mkdir -p fairseq_tutorial
 cd fairseq_tutorial
+```
 
-# 本チュートリアル用のPython仮想環境を /path/to/dir/fairseq_tutorial/.venv に作成
+本チュートリアル用のPython仮想環境を /path/to/dir/fairseq_tutorial/.venv に作成
+```
 python3 -m venv .venv
+```
 
-# 仮想環境を有効化
+仮想環境を有効化
+```
 source .venv/bin/activate
+```
 
-# Pytorchをインストール
+Pytorchをインストール
+```
 pip3 install torch torchaudio --index-url https://download.pytorch.org/whl/cu124
 ```
 
-とりあえず動かすだけならPyPI標準のfairseqをpipで入れる（最新版ではない）
+GitHub上のfairseqをpipで入れる
 ```
-# pipでfairseqをインストール
 git clone https://github.com/pytorch/fairseq
 cd fairseq 
 pip install --editable ./
 cd ..
 ```
 
+sentencepieceをインストール
 ```
-# sentencepieceをインストール
 pip3 install sentencepiece
+```
 
-# tensorboardXをインストール
+tensorboardXをインストール（今回のチュートリアルでは使わないが念のため）
+```
 pip3 install tensorboardX
 ```
 
-```
 # データ格納用のディレクトリを作成しておく
+```
 mkdir -p data spm
+```
 
-# curlでKFTTをダウンロードして展開（そんなに大きくないので圧縮ファイルを手元に残さない方向で）
-# data/kftt-data-1.0 にデータが格納される
+curlでKFTTをダウンロードして展開（そんなに大きくないので圧縮ファイルを手元に残さない方向で）
+data/kftt-data-1.0 にデータが格納される
+```
 curl http://www.phontron.com/kftt/download/kftt-data-1.0.tar.gz | tar zxf - -C data
 ```
 
+sentencepieceのモデルを学習
 ```
-# sentencepieceのモデルを学習
 python3
+```
 
-# Pythonのプロンプト内で以下を実行
+Pythonのプロンプト内で以下を実行
+```
 import sentencepiece as spm
 spm.SentencePieceTrainer.train(input=['data/kftt-data-1.0/data/orig/kyoto-train.en', 'data/kftt-data-1.0/data/orig/kyoto-train.ja'], model_prefix="spm/spm", bos_id=0, pad_id=1, eos_id=2, unk_id=3)
 exit
+```
 
-# fairseq用の辞書ファイルを生成
+fairseq用の辞書ファイルを生成
+```
 cut -f1 spm/spm.vocab | tail -n +5 | sed "s/$/ 100/g" > spm/spm.dict
+```
 
-# トークン化したファイルを保存するためのディレクトリを作成
+トークン化したファイルを保存するためのディレクトリを作成
+```
 mkdir -p data/kftt-data-1.0/data/spm
+```
 
-# 学習したsentencepieceのモデルでテキストデータをトークン化
+学習したsentencepieceのモデルでテキストデータをトークン化
+```
 python3
+```
 
-# Pythonのプロンプト内で以下を実行
+Pythonのプロンプト内で以下を実行
+```
 import sentencepiece as spm
 sp = spm.SentencePieceProcessor(model_file='spm/spm.model')
 for data in ['kyoto-train', 'kyoto-dev', 'kyoto-test']:
@@ -74,8 +95,8 @@ for data in ['kyoto-train', 'kyoto-dev', 'kyoto-test']:
 exit()
 ```
 
+fairseq用データ形式の変換（前処理）
 ```
-# fairseq用データ形式の変換（前処理）
 fairseq-preprocess \
         --source-lang ja \
         --target-lang en \
@@ -86,9 +107,11 @@ fairseq-preprocess \
         --joined-dictionary \
         --srcdict spm/spm.dict \
         --bpe sentencepiece
+```
 
-# fairseqモデルの学習
-# CUDA_VISIBLE_DEVICES=0 は1枚目のGPUだけを使う、というおまじない
+fairseqモデルの学習
+`CUDA_VISIBLE_DEVICES=0` は1枚目のGPUだけを使う、というおまじない
+```
 env CUDA_VISIBLE_DEVICES=0 fairseq-train data/kftt-data-1.0/data/spm.bin \
         --fp16 \
         --arch transformer \
@@ -121,8 +144,8 @@ env CUDA_VISIBLE_DEVICES=0 fairseq-train data/kftt-data-1.0/data/spm.bin \
         --tensorboard-logdir runs
 ```
 
+学習したモデルによる翻訳（前処理済みのテストセットに対して）
 ```
-# 学習したモデルによる翻訳（前処理済みのテストセットに対して）
 mkdir -p result
 env CUDA_VISIBLE_DEVICES=0 fairseq-generate data/kftt-data-1.0/data/spm.bin \
         --path data/kftt-data-1.0/model/checkpoint_last.pt \
@@ -131,14 +154,18 @@ env CUDA_VISIBLE_DEVICES=0 fairseq-generate data/kftt-data-1.0/data/spm.bin \
 | tee result/kyoto-test.en.log
 ```
 
+fairseq-generateのログから翻訳結果の行 (Hで始まる）を取り出し、番号順にsortし、翻訳結果のテキストのみを取り出す
 ```
-# fairseq-generateのログから翻訳結果の行 (Hで始まる）を取り出し、番号順にsortし、翻訳結果のテキストのみを取り出す
 grep ^H result/kyoto-test.en.log | sed -e 's,^H-,,' | sort -k 1n | cut -f 3 > result/kyoto-test.en.spm
+```
 
-# 学習したsentencepieceのモデルでサブワード化されたテキストを脱トークン化
+学習したsentencepieceのモデルでサブワード化されたテキストを脱トークン化
+```
 python3
+```
 
-# Pythonのプロンプト内で以下を実行
+Pythonのプロンプト内で以下を実行
+```
 import sentencepiece as spm
 sp = spm.SentencePieceProcessor(model_file='spm/spm.model')
 with open('result/kyoto-test.en.spm', 'rt') as rf, open('result/kyoto-test.en', 'wt') as wf:
@@ -148,10 +175,12 @@ with open('result/kyoto-test.en.spm', 'rt') as rf, open('result/kyoto-test.en', 
 exit()
 ```
 
+機械翻訳評価のためのツールを入れる
 ```
-# 機械翻訳評価のためのツールを入れる
 pip install sacrebleu\[ja\]
+```
 
-# sacrebleuを使ってBLEUを評価
+sacrebleuを使ってBLEUを評価
+```
 sacrebleu data/kftt-data-1.0/data/orig/kyoto-test.en -i result/kyoto-test.en
 ```
