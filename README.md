@@ -44,7 +44,7 @@ tensorboardXをインストール（今回のチュートリアルでは使わ�
 pip3 install tensorboardX
 ```
 
-# データ格納用のディレクトリを作成しておく
+データ格納用のディレクトリを作成しておく
 ```
 mkdir -p data spm
 ```
